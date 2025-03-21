@@ -1,0 +1,419 @@
+/* App.css */
+:root {
+  --primary-color: #3b82f6;
+  --green-color: #22c55e;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --red-500: #ef4444;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --border-radius: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  background-color: var(--gray-100);
+}
+
+.order-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Estilos para el encabezado */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Espacio entre el ícono y el título */
+}
+
+.header-icon {
+  width: 40px;
+  /* Ajusta el tamaño del ícono */
+  height: 40px;
+  border-radius: 50%;
+  /* Opcional: para un ícono redondo */
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+  /* Elimina el margen predeterminado */
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.theme-toggle,
+.notifications {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.theme-toggle:hover,
+.notifications:hover {
+  background-color: var(--gray-200);
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--red-500);
+  color: var(--white);
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.search-filter-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.search-container {
+  position: relative;
+  flex: 1;
+  max-width: 800px;
+  /* Limitar el ancho para que esté más a la izquierda */
+}
+
+.icon-search {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--gray-500);
+  background-color: transparent;
+  /* Icono de búsqueda */
+  border: 2px solid var(--gray-500);
+  border-radius: 50%;
+}
+
+.icon-search::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 2px;
+  background-color: var(--gray-500);
+  bottom: -2px;
+  right: -2px;
+  transform: rotate(45deg);
+}
+
+.search-container input {
+  width: 100%;
+  padding: 10px 10px 10px 36px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-300);
+  font-size: 0.875rem;
+  outline: none;
+  background-color: var(--white);
+  /* Asegurando que el fondo es blanco */
+  color: var(--gray-800);
+  /* Color del texto oscuro para contraste */
+}
+
+.search-container input::placeholder {
+  color: var(--gray-500);
+}
+
+.search-container input:focus {
+  border-color: var(--primary-color);
+}
+
+.filter-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-dropdown,
+.sort-dropdown {
+  position: relative;
+}
+
+.filter-dropdown select,
+.sort-dropdown select {
+  padding: 10px 16px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--gray-300);
+  background-color: var(--white);
+  font-size: 0.875rem;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  min-width: 120px;
+  color: var(--gray-800);
+  /* Asegurando que el texto sea visible */
+}
+
+.filter-dropdown select:focus,
+.sort-dropdown select:focus {
+  border-color: var(--primary-color);
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--gray-300);
+  gap: 2px;
+}
+
+.tab {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  font-weight: 500;
+  position: relative;
+}
+
+.tab.active {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--primary-color);
+}
+
+.badge {
+  background-color: var(--primary-color);
+  color: var(--white);
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.order-card {
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  border: 1px solid var(--gray-200);
+}
+
+.order-card.delivery {
+  border-left: 4px solid var(--primary-color);
+}
+
+.order-card.pickup {
+  border-left: 4px solid var(--green-color);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.order-id {
+  font-weight: 600;
+  color: var(--gray-800);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.new-badge {
+  background-color: var(--primary-color);
+  color: var(--white);
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.order-type {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.order-type.delivery {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.order-type.pickup {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.customer-info {
+  margin-bottom: 12px;
+}
+
+.customer-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 4px;
+}
+
+.customer-info p {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.section-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 4px;
+}
+
+.order-items {
+  margin-bottom: 12px;
+}
+
+.order-items ul {
+  list-style-type: none;
+  padding-left: 20px;
+}
+
+.order-items li {
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.order-items li::before {
+  content: '•';
+  position: absolute;
+  left: -12px;
+  color: var(--gray-500);
+}
+
+.order-details {
+  margin-bottom: 12px;
+}
+
+.order-details p:not(.section-label) {
+  font-size: 0.875rem;
+  color: var(--gray-700);
+}
+
+.order-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+@media (max-width: 768px) {
+  .search-filter-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-controls {
+    width: 100%;
+  }
+
+  .filter-dropdown,
+  .sort-dropdown {
+    flex: 1;
+  }
+
+  .orders-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Estilos para el botón "Pedido listo" */
+.ready-button {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.3s ease;
+}
+
+.ready-button:hover {
+  background-color: var(--gray-700);
+}
