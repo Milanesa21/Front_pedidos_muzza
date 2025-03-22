@@ -17,6 +17,10 @@
   --border-radius: 8px;
 }
 
+html {
+  height: 100%;
+  /* Asegura que el html ocupe el 100% de la altura de la ventana */
+}
 * {
   margin: 0;
   padding: 0;
@@ -26,12 +30,18 @@
 
 body {
   background-color: var(--gray-100);
+  min-height: 100vh;
+  /* Asegura que el body ocupe al menos el 100% de la altura de la ventana */
+  display: flex;
+  flex-direction: column;
 }
 
 .order-dashboard {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  flex-grow: 1;
+  /* Permite que el contenedor crezca para ocupar el espacio disponible */
 }
 
 /* Estilos para el encabezado */

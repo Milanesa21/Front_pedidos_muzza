@@ -120,10 +120,8 @@ function App() {
 
   if (activeTab === "New" && !order.isNew) return false;
   if (activeTab === "Delivery" && order.type !== "Delivery") return false;
-  if (activeTab === "Pasa a buscar" && order.type !== "Pasa a buscar") return false;
+  if (activeTab === "Pickup" && order.type !== "Pickup") return false;
 
-  // Filtro por tipo en el dropdown, asumiendo que el valor por defecto es "Tipos de pedido"
-  if (filterType !== "Tipos de pedido" && order.type !== filterType) return false;
 
   return true;
 });
