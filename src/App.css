@@ -427,3 +427,16 @@ h1 {
 .ready-button:hover {
   background-color: var(--gray-700);
 }
+
+.item-quantity {
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-left: 4px;
+}
+
+.item-subtotal {
+  font-weight: normal;
+  color: var(--gray-600);
+  margin-left: 8px;
+  font-size: 0.9em;
+}

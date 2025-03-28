@@ -3,7 +3,7 @@ import './App.css';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import { getPedidos, markPedidoAsRead, markPedidoAsDone } from "./services/pedidoServices";
-import { io } from "socket.io-client"; // Importar Socket.IO
+import { io } from "socket.io-client";
 
 function App() {
   const [orders, setOrders] = useState([]);
@@ -11,74 +11,79 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All Types');
   const [sortOrder, setSortOrder] = useState('Time (Earliest)');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Obtener los pedidos del backend al cargar el componente
   useEffect(() => {
-    fetchPedidos();
+    const fetchData = async () => {
+      setIsLoading(true);
+      await fetchPedidos();
+      setIsLoading(false);
+    };
 
-    // Configurar Socket.IO
-    const socket = io("http://localhost:4000"); // URL del backend
-
-    // Escuchar eventos de nuevos pedidos
+    fetchData();
+    
+    const socket = io("tablaspedidosmuzza.com");
     socket.on("nuevoPedido", (nuevoPedido) => {
-      setOrders((prevOrders) => [nuevoPedido, ...prevOrders]);
+      setOrders(prevOrders => [nuevoPedido, ...prevOrders]);
     });
 
-    // Limpiar el socket al desmontar el componente
     return () => {
       socket.disconnect();
     };
   }, []);
 
-  // Verificar nuevos pedidos cada 10 segundos
   useEffect(() => {
     const interval = setInterval(() => {
       fetchPedidos();
-    }, 10000); // 10 segundos
+    }, 10000);
 
-    return () => clearInterval(interval); // Limpiar el intervalo al desmontar el componente
+    return () => clearInterval(interval);
   }, []);
 
   const fetchPedidos = async () => {
     try {
-      const data = await getPedidos(); // Obtener todos los pedidos del backend
+      const data = await getPedidos();
       const formattedOrders = data.map((pedido) => {
-  // Verificar si items ya es un objeto o necesita ser parseado
-  const items = typeof pedido.items === 'string'
-    ? JSON.parse(pedido.items)
-    : pedido.items;
+        const items = typeof pedido.items === 'string' 
+          ? JSON.parse(pedido.items) 
+          : pedido.items;
 
-  // Determinar el tipo usando el campo "delivery" (asumiendo que es booleano)
-  const orderType = pedido.delivery ? "Delivery" : "Pickup";
+        const orderType = pedido.delivery ? "Delivery" : "Pickup";
 
-  return {
-    id: pedido.id,
-    customer: pedido.nombre_cliente,
-    time: pedido.horario,
-    paymentMethod: pedido.metodo_pago,
-    items: items.map((item) => item.nombre),
-    details: pedido.detalles,
-    total: pedido.total,
-    type: orderType,
-    isNew: pedido.is_new,
-    // Solo usamos la dirección si es un pedido de delivery
-    direccion: pedido.delivery ? pedido.direccion : "",
-    isDone: pedido.is_done || false,
-  };
-});
+        return {
+          id: pedido.id,
+          customer: pedido.nombre_cliente,
+          time: pedido.horario,
+          paymentMethod: pedido.metodo_pago,
+          items: items.map(item => ({
+            nombre: item.nombre,
+            cantidad: item.cantidad || 1,
+            precioUnitario: item.precioUnitario || item.precio,
+            precioTotal: item.precioTotal || (item.precio * (item.cantidad || 1))
+          })),
+          details: pedido.detalles,
+          total: parseFloat(pedido.total) || 0,
+          type: orderType,
+          isNew: pedido.is_new,
+          direccion: pedido.direccion || "",
+          isDone: pedido.is_done || false,
+          createdAt: new Date(pedido.created_at || pedido.horario)
+        };
+      });
 
-      setOrders(formattedOrders); // Actualizar el estado con todos los pedidos
+      // Ordenar por fecha de creación (más recientes primero)
+      formattedOrders.sort((a, b) => b.createdAt - a.createdAt);
+      setOrders(formattedOrders);
     } catch (error) {
       console.error("Error al obtener los pedidos:", error);
     }
   };
 
-  // Marcar un pedido como leído
   const handleMarkAsRead = async (id) => {
     try {
       await markPedidoAsRead(id);
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
           order.id === id ? { ...order, isNew: false } : order
         )
       );
@@ -87,12 +92,11 @@ function App() {
     }
   };
 
-  // Marcar un pedido como listo
   const handleMarkAsDone = async (id) => {
     try {
       await markPedidoAsDone(id);
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
           order.id === id ? { ...order, isDone: true } : order
         )
       );
@@ -101,34 +105,31 @@ function App() {
     }
   };
 
-  // Filtrar los pedidos según los criterios seleccionados
- const filteredOrders = orders.filter((order) => {
-  // Si hay búsqueda, se evalúa en todos los pedidos, sin excluir los terminados.
-  if (searchQuery) {
-    // Buscar en el nombre del cliente o en el ID (convertido a cadena)
-    return (
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toString().toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }
+  const filteredOrders = orders.filter((order) => {
+    if (searchQuery) {
+      return (
+        order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.id.toString().includes(searchQuery)
+      );
+    }
 
-  // Si no hay búsqueda, se filtra según la pestaña activa
-  if (activeTab === "Done") return order.isDone;
+    if (activeTab === "Done") return order.isDone;
+    if (order.isDone) return false;
+    if (activeTab === "New" && !order.isNew) return false;
+    if (activeTab === "Delivery" && order.type !== "Delivery") return false;
+    if (activeTab === "Pickup" && order.type !== "Pickup") return false;
+    return true;
+  });
 
-  // En las otras pestañas se excluyen los pedidos terminados
-  if (order.isDone) return false;
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    if (sortOrder === "Time (mas recientes)") return b.createdAt - a.createdAt;
+    if (sortOrder === "Time (ultimos)") return a.createdAt - b.createdAt;
+    if (sortOrder === "Total (mas altos)") return b.total - a.total;
+    if (sortOrder === "Total (mas bajos)") return a.total - b.total;
+    return 0;
+  });
 
-  if (activeTab === "New" && !order.isNew) return false;
-  if (activeTab === "Delivery" && order.type !== "Delivery") return false;
-  if (activeTab === "Pickup" && order.type !== "Pickup") return false;
-
-
-  return true;
-});
-
-
-  // Contar pedidos nuevos para el badge de notificaciones
-  const newOrdersCount = orders.filter((order) => order.isNew && !order.isDone).length;
+  const newOrdersCount = orders.filter(order => order.isNew && !order.isDone).length;
 
   return (
     <div className="order-dashboard">
@@ -155,7 +156,7 @@ function App() {
           <i className="icon-search"></i>
           <input
             type="text"
-            placeholder="Busca por nombre de cliente, o, ID de pedido"
+            placeholder="Busca por nombre de cliente o ID de pedido"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -167,9 +168,9 @@ function App() {
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
             >
-              <option>Tipos de pedido</option>
-              <option>Delivery</option>
-              <option>Pasa a buscar</option>
+              <option value="All Types">Todos los tipos</option>
+              <option value="Delivery">Delivery</option>
+              <option value="Pickup">Pasa a buscar</option>
             </select>
           </div>
 
@@ -220,71 +221,96 @@ function App() {
         </button>
       </div>
 
-      <div className="orders-grid">
-        {filteredOrders.map((order) => (
-          <div
-            className={`order-card ${order.type.toLowerCase()}`}
-            key={order.id}
-            onClick={() => handleMarkAsRead(order.id)} // Marcar como leído al hacer clic
-          >
-            <div className="order-header">
-              <div className="order-id">
-                {order.id}
-                {order.isNew && <span className="new-badge">New</span>}
+      {isLoading ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Cargando pedidos...</p>
+        </div>
+      ) : (
+        <div className="orders-grid">
+          {sortedOrders.length > 0 ? (
+            sortedOrders.map((order) => (
+              <div
+                className={`order-card ${order.type.toLowerCase()} ${order.isDone ? "done" : ""}`}
+                key={order.id}
+                onClick={() => handleMarkAsRead(order.id)}
+              >
+                <div className="order-header">
+                  <div className="order-id">
+                    #{order.id}
+                    {order.isNew && !order.isDone && <span className="new-badge">New</span>}
+                    {order.isDone && <span className="done-badge">Listo</span>}
+                  </div>
+                  <div className={`order-type ${order.type.toLowerCase()}`}>
+                    {order.type}
+                  </div>
+                </div>
+
+                <div className="customer-info">
+                  <h3>{order.customer}</h3>
+                  <p>
+                    {order.time} · {order.paymentMethod}
+                  </p>
+                </div>
+
+                <div className="order-items">
+                  <p className="section-label">Items:</p>
+                  <ul>
+                    {order.items.map((item, index) => (
+                      <li key={index}>
+                        <span className="item-name">{item.nombre}</span>
+                        <span className="item-meta">
+                          <span className="item-quantity">x{item.cantidad}</span>
+                          {item.precioUnitario && (
+                            <span className="item-price">${item.precioUnitario.toFixed(2)} c/u</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {order.details && (
+                  <div className="order-details">
+                    <p className="section-label">Detalles:</p>
+                    <p>{order.details}</p>
+                  </div>
+                )}
+
+                {order.type === "Delivery" && order.direccion && (
+                  <div className="order-direccion">
+                    <p className="section-label">Dirección:</p>
+                    <p>{order.direccion}</p>
+                  </div>
+                )}
+
+                <div className="order-footer">
+                  <div className="order-total">
+                    <p className="section-label">Total:</p>
+                    <p className="price">${order.total.toFixed(2)}</p>
+                  </div>
+
+                  {!order.isDone && (
+                    <button
+                      className="ready-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsDone(order.id);
+                      }}
+                    >
+                      Pedido listo
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className={`order-type ${order.type.toLowerCase()}`}>
-                {order.type}
-              </div>
+            ))
+          ) : (
+            <div className="no-orders">
+              <p>No hay pedidos que coincidan con tu búsqueda</p>
             </div>
-
-            <div className="customer-info">
-              <h3>{order.customer}</h3>
-              <p>
-                {order.time} · {order.paymentMethod}
-              </p>
-            </div>
-
-            <div className="order-items">
-              <p className="section-label">Items:</p>
-              <ul>
-                {order.items.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            </div>
-
-            {order.details && (
-              <div className="order-details">
-                <p className="section-label">Detalles:</p>
-                <p>{order.details}</p>
-              </div>
-            )}
-
-            {order.type === "Delivery" && order.direccion && (
-              <div className="order-direccion">
-                <p className="section-label">Dirección:</p>
-                <p>{order.direccion}</p>
-              </div>
-            )}
-
-            <div className="order-total">
-              <p className="section-label">Total:</p>
-              <p className="price">${isNaN(Number(order.total)) ? order.total : Number(order.total).toFixed(2)}</p>
-            </div>
-
-            {/* Botón "Pedido listo" */}
-            <button
-              className="ready-button"
-              onClick={(e) => {
-                e.stopPropagation(); // Evitar que el clic se propague al contenedor
-                handleMarkAsDone(order.id);
-              }}
-            >
-              Pedido listo
-            </button>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

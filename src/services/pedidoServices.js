@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:4000/pedidos"; // URL de tu backend
+const API_URL = "tablaspedidosmuzza.com/pedidos"; // URL de tu backend
 
 // Obtener todos los pedidos
 export const getPedidos = async () => {
