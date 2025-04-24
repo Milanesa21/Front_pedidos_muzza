@@ -22,8 +22,24 @@ function App() {
 
     fetchData();
     
-    const socket = io("tablaspedidosmuzza.com");
+    // Nueva configuración de Socket.io
+    const socket = io("https://botwhatsapprailway1-production.up.railway.app", {
+      transports: ['websocket', 'polling'],
+      extraHeaders: {
+        "Content-Type": "application/json"
+      }
+    });
+    
+    socket.on("connect", () => {
+      console.log("Conectado a Socket.io:", socket.id);
+    });
+    
+    socket.on("connect_error", (error) => {
+      console.error("Error de conexión Socket.io:", error);
+    });
+    
     socket.on("nuevoPedido", (nuevoPedido) => {
+      console.log("Nuevo pedido recibido:", nuevoPedido);
       setOrders(prevOrders => [nuevoPedido, ...prevOrders]);
     });
 
