@@ -4,7 +4,6 @@ import axios from "axios";
 axios.defaults.headers.common["Content-Type"] = "application/json";
 
 const API_URL = "https://botwhatsapprailway1-production.up.railway.app/pedidos";
-
 // Obtener todos los pedidos
 export const getPedidos = async () => {
   try {

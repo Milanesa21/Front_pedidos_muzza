@@ -1,3 +1,4 @@
+// App.jsx
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -10,37 +11,69 @@ function App() {
   const [activeTab, setActiveTab] = useState('All Orders');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All Types');
-  const [sortOrder, setSortOrder] = useState('Time (Earliest)');
+  const [sortOrder, setSortOrder] = useState('Time (mas recientes)');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      await fetchPedidos();
-      setIsLoading(false);
+  // Función para transformar un pedido crudo en tu formato de UI
+  const formatPedido = (pedido) => {
+    const items = typeof pedido.items === 'string' ? JSON.parse(pedido.items) : pedido.items;
+    return {
+      id: pedido.id,
+      customer: pedido.nombre_cliente,
+      time: pedido.horario,
+      paymentMethod: pedido.metodo_pago,
+      items: items.map(item => ({
+        nombre: item.nombre,
+        cantidad: item.cantidad || 1,
+        precioUnitario: item.precioUnitario || item.precio,
+        precioTotal: item.precioTotal || item.precio * (item.cantidad || 1),
+      })),
+      details: pedido.detalles,
+      total: parseFloat(pedido.total) || 0,
+      type: pedido.delivery ? "Delivery" : "Pickup",
+      isNew: pedido.is_new,
+      direccion: pedido.direccion || "",
+      isDone: pedido.is_done || false,
+      createdAt: new Date(pedido.created_at || pedido.horario),
     };
+  };
 
-    fetchData();
-    
-    // Nueva configuración de Socket.io
+  // Carga inicial de pedidos y configuración de Socket.io
+  useEffect(() => {
+    const fetchAndSet = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getPedidos();
+        const formatted = data.map(formatPedido)
+                              .sort((a, b) => b.createdAt - a.createdAt);
+        setOrders(formatted);
+      } catch (err) {
+        console.error("Error al obtener los pedidos:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAndSet();
+
     const socket = io("https://botwhatsapprailway1-production.up.railway.app", {
       transports: ['websocket', 'polling'],
-      extraHeaders: {
-        "Content-Type": "application/json"
-      }
+      extraHeaders: { "Content-Type": "application/json" }
     });
-    
+
     socket.on("connect", () => {
       console.log("Conectado a Socket.io:", socket.id);
     });
-    
-    socket.on("connect_error", (error) => {
-      console.error("Error de conexión Socket.io:", error);
+    socket.on("connect_error", (err) => {
+      console.error("Error Socket.io:", err);
     });
-    
+
+    // Escuchamos nuevos pedidos “push”
     socket.on("nuevoPedido", (nuevoPedido) => {
       console.log("Nuevo pedido recibido:", nuevoPedido);
-      setOrders(prevOrders => [nuevoPedido, ...prevOrders]);
+      setOrders(prev => {
+        const formatted = formatPedido(nuevoPedido);
+        return [formatted, ...prev];
+      });
     });
 
     return () => {
@@ -48,76 +81,27 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchPedidos();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchPedidos = async () => {
-    try {
-      const data = await getPedidos();
-      const formattedOrders = data.map((pedido) => {
-        const items = typeof pedido.items === 'string' 
-          ? JSON.parse(pedido.items) 
-          : pedido.items;
-
-        const orderType = pedido.delivery ? "Delivery" : "Pickup";
-
-        return {
-          id: pedido.id,
-          customer: pedido.nombre_cliente,
-          time: pedido.horario,
-          paymentMethod: pedido.metodo_pago,
-          items: items.map(item => ({
-            nombre: item.nombre,
-            cantidad: item.cantidad || 1,
-            precioUnitario: item.precioUnitario || item.precio,
-            precioTotal: item.precioTotal || (item.precio * (item.cantidad || 1))
-          })),
-          details: pedido.detalles,
-          total: parseFloat(pedido.total) || 0,
-          type: orderType,
-          isNew: pedido.is_new,
-          direccion: pedido.direccion || "",
-          isDone: pedido.is_done || false,
-          createdAt: new Date(pedido.created_at || pedido.horario)
-        };
-      });
-
-      // Ordenar por fecha de creación (más recientes primero)
-      formattedOrders.sort((a, b) => b.createdAt - a.createdAt);
-      setOrders(formattedOrders);
-    } catch (error) {
-      console.error("Error al obtener los pedidos:", error);
-    }
-  };
+  // ——— El efecto de polling QUEDA ELIMINADO ———
+  // useEffect(() => {
+  //   const interval = setInterval(fetchAndSet, 10000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const handleMarkAsRead = async (id) => {
     try {
       await markPedidoAsRead(id);
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === id ? { ...order, isNew: false } : order
-        )
-      );
-    } catch (error) {
-      console.error("Error al marcar el pedido como leído:", error);
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, isNew: false } : o));
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleMarkAsDone = async (id) => {
     try {
       await markPedidoAsDone(id);
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === id ? { ...order, isDone: true } : order
-        )
-      );
-    } catch (error) {
-      console.error("Error al marcar el pedido como listo:", error);
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, isDone: true } : o));
+    } catch (err) {
+      console.error(err);
     }
   };
 
